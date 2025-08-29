@@ -1,20 +1,20 @@
-# Use an official Node.js runtime as a base
 FROM node:18-alpine
 
-# Set the working directory inside the container
+# Set working directory inside container
 WORKDIR /app
 
-# Copy only package.json and package-lock.json first (better caching)
+# Copy package.json and install dependencies
 COPY package*.json ./
+RUN npm install
 
-# Install dependencies
-RUN npm install --production
-
-# Copy the rest of your app
+# Copy the rest of the project (including prisma and src)
 COPY . .
 
-# Expose the port your app runs on
+# Generate Prisma client (will look in /app/prisma/schema.prisma)
+RUN npx prisma generate
+
+# Expose the app port
 EXPOSE 3000
 
 # Start the app
-CMD ["npm", "start"]
+CMD ["node", "src/index.js"]
