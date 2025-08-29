@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `Payments` ADD COLUMN `Status` VARCHAR(191) NOT NULL DEFAULT 'Initiated',
+    ADD COLUMN `currency` VARCHAR(191) NOT NULL DEFAULT 'NGN';
