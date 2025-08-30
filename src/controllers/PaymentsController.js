@@ -1,4 +1,4 @@
-import { generateTransactionReference, getUserInfo, initializeBudpayPayment, verifyBudayTransaction } from "../helpers/helpers.js"
+import { generateTransactionReference, getUserInfo, initializeBudpayPayment, initializePaystackPayment, verifyBudayTransaction } from "../helpers/helpers.js"
 import prisma from "../lib/prisma.js"
 
 const initiatePayment = async (req, res) => {
@@ -37,6 +37,59 @@ const initiatePayment = async (req, res) => {
         return res.status(200).json({
             message: "Payment initialized successfully",
             data: initializePayment.data.authorization_url
+        })
+    }
+    catch (err) {
+        console.error(err)
+        return res.status(500).json({
+            message: "Unable to initiate payment at this time"
+        })
+    }
+
+}
+
+const initiatePaymentPaystack = async (req, res) => {
+    try {
+        const userId = req.user.id
+        const user = await getUserInfo(userId)
+        const { amount, paymentType } = req.body
+        const paymentTypeInfo = await prisma.paymentType.findFirst({
+            where: {
+                type: paymentType
+            }
+        })
+
+        if (!paymentTypeInfo) return res.status(400).json({
+            message: "Invalid payment type selected"
+        })
+        //generate reference
+
+        let trxRef = generateTransactionReference("nfca-oyo-dues")
+
+        const payment = await prisma.payment.create({
+            data: {
+                amount,
+                transactionReference: trxRef,
+                paymentTypeId: paymentTypeInfo.id,
+                statusId: 1
+            }
+        })
+        const payload = {
+            email: user.email,
+            amount: (amount *100).toString(),
+        }
+        let initializePayment = await initializePaystackPayment(payload)
+        const updatedPayment = await prisma.payment.update({
+            where:{
+                id:payment.id
+            },
+            data:{
+                providerReference:initializePayment.data.reference
+            }
+        })
+        return res.status(200).json({
+            message: "Payment initialized successfully",
+            data: initializePayment.data
         })
     }
     catch (err) {
@@ -98,7 +151,28 @@ const handlePaymentHook = async (req, res) => {
     }
 }
 
+const receivePaystackHook = async (req, res) => {
+    const event = req.body;
+    res.send(200);
+    handlePaystackHook(event);
+}
+
+const handlePaystackHook = async (payload) => {
+    await prisma.payment.update({
+        where: {
+            providerReference: payload.data.reference
+        },
+        data: {
+            status:payload.data.status,
+            providerResponse:payload
+        }
+    })
+    return;
+}
+
 export {
     initiatePayment,
-    handlePaymentHook
+    initiatePaymentPaystack,
+    handlePaymentHook,
+    receivePaystackHook
 }

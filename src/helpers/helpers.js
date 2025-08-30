@@ -32,6 +32,25 @@ const initializeBudpayPayment = async (payload) => {
     }
 }
 
+const initializePaystackPayment = async (payload) => {
+    try {
+        console.log(payload);
+        
+        const response = await axios.post('https://api.paystack.co/transaction/initialize', payload, {
+            headers: {
+                Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`,
+                "Content-Type": "application/json"
+            }
+        })
+        console.log(response.data);
+        
+        return response.data
+    }
+    catch (err) {
+        throw err
+    }
+}
+
 const verifyBudayTransaction = async (reference) => {
     try {
         const response = await axios.get(`https://api.budpay.com/api/v2/transaction/verify/${reference}`, {
@@ -65,5 +84,6 @@ export {
     generateTransactionReference,
     initializeBudpayPayment,
     getUserInfo,
-    verifyBudayTransaction
+    verifyBudayTransaction,
+    initializePaystackPayment
 }
