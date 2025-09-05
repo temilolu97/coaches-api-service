@@ -30,8 +30,7 @@ const initiatePayment = async (req, res) => {
         const payload = {
             email: user.email,
             amount: amount.toString(),
-            reference: payment.transactionReference,
-            callbackUrl: 'https://webhook.site/51b03a55-006d-4471-a43d-57aaa3a2e877'
+            reference: payment.transactionReference
         }
         let initializePayment = await initializeBudpayPayment(payload)
         return res.status(200).json({
@@ -76,15 +75,15 @@ const initiatePaymentPaystack = async (req, res) => {
         })
         const payload = {
             email: user.email,
-            amount: (amount *100).toString(),
+            amount: (amount * 100).toString(),
         }
         let initializePayment = await initializePaystackPayment(payload)
         const updatedPayment = await prisma.payment.update({
-            where:{
-                id:payment.id
+            where: {
+                id: payment.id
             },
-            data:{
-                providerReference:initializePayment.data.reference
+            data: {
+                providerReference: initializePayment.data.reference
             }
         })
         return res.status(200).json({
@@ -128,20 +127,20 @@ const handlePaymentHook = async (req, res) => {
                 },
                 data: {
                     status: paymentVerification.status,
-                    providerReference:paymentVerification.reference,
-                    providerResponse:paymentVerification
+                    providerReference: paymentVerification.reference,
+                    providerResponse: paymentVerification
                 }
             })
         }
-        else{
-             prisma.payment.update({
+        else {
+            prisma.payment.update({
                 where: {
                     transactionReference: reference
                 },
                 data: {
                     status: "failed",
-                    providerReference:paymentVerification.reference,
-                    providerResponse:paymentVerification
+                    providerReference: paymentVerification.reference,
+                    providerResponse: paymentVerification
                 }
             })
         }
@@ -153,21 +152,52 @@ const handlePaymentHook = async (req, res) => {
 
 const receivePaystackHook = async (req, res) => {
     const event = req.body;
-    res.send(200);
+    res.status(200).json({ message: 'Hook received' });
     handlePaystackHook(event);
 }
 
 const handlePaystackHook = async (payload) => {
-    await prisma.payment.update({
-        where: {
-            providerReference: payload.data.reference
-        },
-        data: {
-            status:payload.data.status,
-            providerResponse:payload
+    try {
+        const payment = await prisma.payment.findFirst({
+            where: {
+                providerReference: payload.data.reference
+            }
+        })
+        if (!payment) {
+            console.error("Payment not found for reference:", payload.data.reference);
+            return;
         }
-    })
-    return;
+
+        // Helper to update payment in one place
+        const updatePayment = async (data) => {
+            await prisma.payment.update({
+                where: { id: payment.id },
+                data: {
+                    ...data
+                }
+            });
+        };
+        if (payload.data.amount / 100 !== payment.amount) {
+            return await updatePayment({
+                remarks: "Invalid amount",
+                Status: "Failed"
+            });
+        }
+        if (payload.data.currency !== payment.currency) {
+            return await updatePayment({
+                remarks: "Invalid currency",
+                Status: "Failed"
+            });
+        }
+        return await updatePayment({
+            remarks:payload.data.message ??"",
+            responseMessage:payload.data.gateway_response,
+            Status: payload.data.status === "success" ? "Successful" : payload.data.status
+        });
+    }
+    catch (err) {
+        console.error("Error processing paystack webhook:", err);
+    }
 }
 
 export {

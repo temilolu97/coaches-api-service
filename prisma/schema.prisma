@@ -27,7 +27,7 @@ model User {
   userTypeId Int @default(2)
   dateCreated DateTime @default(now())
   dateUpdated DateTime @updatedAt
-  courses UserCourse[]
+  enrollments Enrollment[]
   licenseHistories LicenseHistory[]
   @@map("Users")
 }
@@ -67,12 +67,16 @@ model Payment{
   currency String @default("NGN")
   paymentType PaymentType @relation(fields:[paymentTypeId], references:[id]) 
   paymentTypeId Int
-  transactionReference String
-  providerReference String?
-  providerResponse String?
+  transactionReference String @unique
+  providerReference String? @unique
+  providerResponse Json?
   paymentStatus PaymentStatus @relation(fields:[statusId], references:[id])
   statusId Int
   Status String @default("Initiated")
+  dateInitiated DateTime @default(now())
+  dateUpdated DateTime? 
+  responseMessage String?
+  remarks String?
   
   @@map("Payments")
 }
@@ -90,26 +94,73 @@ model PaymentStatus{
 model Course{
   id Int @id @default(autoincrement())
   title String
+  description String
   category String
-  price Float
-  courseLevel String
+  price Float?
+  level String
+  enrollments Enrollment[]
+  modules Module[]
   dateCreated DateTime @default(now())
   dateUpdated DateTime?
-  users UserCourse[]
 
   @@map("Courses")
 }
 
-model UserCourse{
+model CourseCategory {
+  id Int @id @default(autoincrement())
+  name String 
+  dateCreated DateTime @default(now())
+  dateUpdated DateTime? 
+
+  @@map("CourseCategories")
+}
+
+model CourseLevel {
+  id Int @id @default(autoincrement())
+  name String 
+  dateCreated DateTime @default(now())
+  dateUpdated DateTime? 
+
+  @@map("CourseLevels")
+}
+
+model Module{
+  id Int @id @default(autoincrement())
+  title String
+  order Int //position in course
+  courseId Int 
+  content String? @db.Text
+  videoUrl String?
+  fileUrl String?
+  
+  course Course @relation(fields:[courseId],references:[id])
+
+  @@map("Modules")
+}
+
+model Enrollment{
   id Int @id @default(autoincrement())
   userId Int 
-  user User @relation(fields:[userId], references:[id])
   courseId Int
-  course Course @relation(fields:[courseId], references:[id])
+  status String
   progress Int @default(0)
   dateEnrolled DateTime @default(now())
+  dateCompleted DateTime?
+
+  user User @relation(fields:[userId], references:[id])
+  course Course @relation(fields:[courseId], references:[id])
+
 
   @@unique([userId, courseId]) //ensures no duplicate pair
+}
+
+model LocalGovernment {
+  id Int @id @default(autoincrement())
+  name String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("LocalGovernments")
 }
 
 model LicenseHistory{

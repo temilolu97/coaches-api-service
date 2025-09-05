@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `Payments` ADD COLUMN `dateInitiated` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    ADD COLUMN `dateUpdated` DATETIME(3) NULL,
+    ADD COLUMN `remarks` VARCHAR(191) NULL,
+    ADD COLUMN `responseMessage` VARCHAR(191) NULL;
