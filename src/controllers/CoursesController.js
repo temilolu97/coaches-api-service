@@ -1,7 +1,20 @@
 import prisma from "../lib/prisma.js"
 
 const getAllCourses = async (req, res) => {
-    const courses = await prisma.course.findMany()
+    const {category} = req.query
+    console.log(category);
+    
+    let courses
+    if(category){
+        courses = await prisma.course.findMany({
+            where:{
+                category
+            }
+        })
+    }
+    else{
+        courses =  await prisma.course.findMany()
+    }
     return res.status(200).json({
         message: "Courses fetched successfully",
         data: courses
