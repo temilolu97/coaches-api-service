@@ -1,8 +1,11 @@
 import express from 'express'
+import cors from 'cors'
 
 const app = express()
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(cors({ origin: "*" }));
+
 import authRoutes from './routes/authRoutes.js'
 import paymentRoutes from './routes/paymentRoutes.js'
 import miscRoutes from './routes/miscRoutes.js'
