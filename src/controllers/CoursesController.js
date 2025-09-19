@@ -43,8 +43,25 @@ const getModulesOfCourses = async (req,res) =>{
     })
 }
 
+const getAllCourseCategories = async (req, res) => {
+    const categories = await prisma.courseCategory.findMany()
+    return res.status(200).json({
+        message: "Course categories fetched successfully",
+        data: categories
+    })
+}
+
+const getAllCourseLevels = async (req, res) => {
+    const levels = await prisma.courseLevel.findMany()
+    return res.status(200).json({
+        message: "Course levels fetched successfully",
+        data: levels
+    })
+}
 
 export {
     getAllCourses,
-    getModulesOfCourses
+    getModulesOfCourses,
+    getAllCourseCategories,
+    getAllCourseLevels
 }
