@@ -35,7 +35,7 @@ const initializeBudpayPayment = async (payload) => {
 const initializePaystackPayment = async (payload) => {
     try {
         console.log(payload);
-        
+
         const response = await axios.post('https://api.paystack.co/transaction/initialize', payload, {
             headers: {
                 Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`,
@@ -43,7 +43,7 @@ const initializePaystackPayment = async (payload) => {
             }
         })
         console.log(response.data);
-        
+
         return response.data
     }
     catch (err) {
@@ -59,7 +59,7 @@ const verifyBudayTransaction = async (reference) => {
             }
         })
         console.log(response.data);
-        
+
         return response.data
     }
     catch (err) {
@@ -80,10 +80,47 @@ const getUserInfo = async (userId) => {
     }
 }
 
+const generateLicenseNumber = (user) => {
+    const userLga = user.localGovernment.slice(0, 3).toUpperCase()
+    const randomNumber = Date.now()
+    return `OYO-NFCA-${userLga}-${randomNumber}`
+
+}
+
+const generateLicense = async (userId) => {
+    try {
+
+
+        const coach = await prisma.user.findFirst({
+            where: {
+                id: userId
+            }
+        })
+
+        if (!coach) throw new Error("User not found")
+        const license = await prisma.licenseHistory.create({
+            data: {
+                licenseNumber: generateLicenseNumber(coach),
+                issueDate: new Date(),
+                expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+                type: 'OPERATIONAL LICENSE',
+                status: "Active",
+                userId: coach.id
+            }
+        })
+
+        return license
+    }
+    catch (err) {
+        throw err
+    }
+}
+
 export {
     generateTransactionReference,
     initializeBudpayPayment,
     getUserInfo,
     verifyBudayTransaction,
-    initializePaystackPayment
+    initializePaystackPayment,
+    generateLicense
 }

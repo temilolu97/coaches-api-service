@@ -67,6 +67,7 @@ model Payment{
   currency String @default("NGN")
   paymentType PaymentType @relation(fields:[paymentTypeId], references:[id]) 
   paymentTypeId Int
+  userId Int
   transactionReference String @unique
   providerReference String? @unique
   providerResponse Json?
@@ -162,6 +163,7 @@ model LocalGovernment {
 
   @@map("LocalGovernments")
 }
+
 
 model LicenseHistory{
   id Int @id @default(autoincrement())

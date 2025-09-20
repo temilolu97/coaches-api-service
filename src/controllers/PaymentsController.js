@@ -1,4 +1,4 @@
-import { generateTransactionReference, getUserInfo, initializeBudpayPayment, initializePaystackPayment, verifyBudayTransaction } from "../helpers/helpers.js"
+import { generateLicense, generateTransactionReference, getUserInfo, initializeBudpayPayment, initializePaystackPayment, verifyBudayTransaction } from "../helpers/helpers.js"
 import prisma from "../lib/prisma.js"
 
 const initiatePayment = async (req, res) => {
@@ -70,7 +70,8 @@ const initiatePaymentPaystack = async (req, res) => {
                 amount,
                 transactionReference: trxRef,
                 paymentTypeId: paymentTypeInfo.id,
-                statusId: 1
+                statusId: 1,
+                userId: userId
             }
         })
         const payload = {
@@ -189,11 +190,12 @@ const handlePaystackHook = async (payload) => {
                 Status: "Failed"
             });
         }
-        return await updatePayment({
+         await updatePayment({
             remarks:payload.data.message ??"",
             responseMessage:payload.data.gateway_response,
             Status: payload.data.status === "success" ? "Successful" : payload.data.status
         });
+        await generateLicense(payment.userId)
     }
     catch (err) {
         console.error("Error processing paystack webhook:", err);
